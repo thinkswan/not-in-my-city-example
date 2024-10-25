@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Person } from "@/data/database";
 import Image from "next/image";
-import { formatDate } from "@/lib/utils";
+import { capitalize, formatDate } from "@/lib/utils";
 
 type SortConfig = {
   key: keyof Person;
@@ -89,22 +89,26 @@ export default function SearchClient({
     });
   };
 
-  const getStatusBadge = (status: Person["status"]) => {
+  const getStatusBadge = (status: Person["status"] | undefined) => {
     const variants = {
       active: "bg-red-100 text-red-800 hover:bg-red-100",
       investigating: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
       found: "bg-green-100 text-green-800 hover:bg-green-100",
     };
-    return variants[status];
+    return status
+      ? variants[status]
+      : "bg-gray-100 text-gray-800 hover:bg-gray-100";
   };
 
-  const getRiskBadge = (risk: Person["riskLevel"]) => {
+  const getRiskBadge = (risk: Person["riskLevel"] | undefined) => {
     const variants = {
       high: "bg-red-100 text-red-800 hover:bg-red-100",
       medium: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
       low: "bg-blue-100 text-blue-800 hover:bg-blue-100",
     };
-    return variants[risk];
+    return risk
+      ? variants[risk]
+      : "bg-gray-100 text-gray-800 hover:bg-gray-100";
   };
 
   return (
@@ -279,14 +283,12 @@ export default function SearchClient({
                     <TableCell>{person.location}</TableCell>
                     <TableCell>
                       <Badge className={getStatusBadge(person.status)}>
-                        {person.status.charAt(0).toUpperCase() +
-                          person.status.slice(1)}
+                        {capitalize(person.status)}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge className={getRiskBadge(person.riskLevel)}>
-                        {person.riskLevel.charAt(0).toUpperCase() +
-                          person.riskLevel.slice(1)}
+                        {capitalize(person.riskLevel)}
                       </Badge>
                     </TableCell>
                   </TableRow>
