@@ -14,8 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Info } from "lucide-react";
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -30,10 +29,8 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      // For demo purposes, hardcoded check
+      // For demo purposes only
       if (email === "admin@notinmycity.org" && password === "admin") {
-        const auth = getAuth();
-        await signInWithEmailAndPassword(auth, email, password);
         router.push("/admin/dashboard");
       } else {
         throw new Error("Invalid credentials");
@@ -62,7 +59,16 @@ export default function AdminLogin() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto">
+        <div className="max-w-md mx-auto space-y-4">
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              This is a demo page. Authentication functionality will be added in
+              a future update. Use email: admin@notinmycity.org and password:
+              admin to test the interface.
+            </AlertDescription>
+          </Alert>
+
           <Card>
             <CardHeader>
               <CardTitle>Agency Login</CardTitle>
