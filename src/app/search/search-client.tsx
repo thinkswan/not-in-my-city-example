@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -17,6 +17,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { Person } from "@/data/database";
 import Image from "next/image";
 import { capitalize, formatDate } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 
 type SortConfig = {
   key: keyof Person;
@@ -29,6 +30,7 @@ export default function SearchClient({
   initialData: Person[];
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery);
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Person[]>(initialData);
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -36,25 +38,26 @@ export default function SearchClient({
     direction: "desc",
   });
 
-  // Handle search with debounce
-  const handleSearch = async (query: string) => {
-    setIsLoading(true);
-    setSearchQuery(query);
+  useEffect(() => {
+    const performSearch = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(debouncedSearch)}`
+        );
+        if (!response.ok) throw new Error("Search failed");
+        const results = await response.json();
+        setData(results);
+      } catch (error) {
+        console.error("Search error:", error);
+        // You might want to show an error message to the user here
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    try {
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(query)}`
-      );
-      if (!response.ok) throw new Error("Search failed");
-      const results = await response.json();
-      setData(results);
-    } catch (error) {
-      console.error("Search error:", error);
-      // You might want to show an error message to the user here
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    performSearch();
+  }, [debouncedSearch]);
 
   const handleSort = (key: keyof Person) => {
     setSortConfig((current) => ({
@@ -143,7 +146,8 @@ export default function SearchClient({
               type="search"
               placeholder="Search by name, location, or case details..."
               className="w-full"
-              onChange={(e) => handleSearch(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
