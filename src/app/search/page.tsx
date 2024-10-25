@@ -14,49 +14,9 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp } from "lucide-react";
-
-// Types for our data
-type Person = {
-  id: string;
-  name: string;
-  dateOfBirth: string;
-  lastSeen: string;
-  location: string;
-  status: "active" | "found" | "investigating";
-  riskLevel: "high" | "medium" | "low";
-};
-
-// Sample data
-const SAMPLE_DATA: Person[] = [
-  {
-    id: "1",
-    name: "Sarah Thompson",
-    dateOfBirth: "1999-03-15",
-    lastSeen: "2024-02-20",
-    location: "Vancouver, BC",
-    status: "active",
-    riskLevel: "high",
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    dateOfBirth: "2002-08-21",
-    lastSeen: "2024-01-15",
-    location: "Toronto, ON",
-    status: "investigating",
-    riskLevel: "medium",
-  },
-  {
-    id: "3",
-    name: "Emma Wilson",
-    dateOfBirth: "2001-11-30",
-    lastSeen: "2024-03-01",
-    location: "Calgary, AB",
-    status: "found",
-    riskLevel: "low",
-  },
-  // Add more sample data as needed
-];
+import { Person, SAMPLE_DATA } from "@/data/database";
+import Image from "next/image";
+import { formatDate } from "@/lib/utils";
 
 type SortConfig = {
   key: keyof Person;
@@ -77,7 +37,6 @@ export default function SearchPage() {
     setIsLoading(true);
     setSearchQuery(query);
 
-    // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     const filtered = SAMPLE_DATA.filter((person) =>
@@ -90,7 +49,7 @@ export default function SearchPage() {
     setIsLoading(false);
   };
 
-  // Handle column sorting
+  // Enhanced sorting function
   const handleSort = (key: keyof Person) => {
     setSortConfig((current) => ({
       key,
@@ -100,9 +59,25 @@ export default function SearchPage() {
 
     setData((current) => {
       const sorted = [...current].sort((a, b) => {
-        if (a[key] < b[key]) return sortConfig.direction === "asc" ? -1 : 1;
-        if (a[key] > b[key]) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
+        // Special sorting for dates
+        if (key === "lastSeen" || key === "dateOfBirth") {
+          return sortConfig.direction === "asc"
+            ? new Date(a[key]).getTime() - new Date(b[key]).getTime()
+            : new Date(b[key]).getTime() - new Date(a[key]).getTime();
+        }
+
+        // Special sorting for risk level
+        if (key === "riskLevel") {
+          const riskOrder = { high: 3, medium: 2, low: 1 };
+          return sortConfig.direction === "asc"
+            ? riskOrder[a.riskLevel] - riskOrder[b.riskLevel]
+            : riskOrder[b.riskLevel] - riskOrder[a.riskLevel];
+        }
+
+        // Default string sorting
+        return sortConfig.direction === "asc"
+          ? a[key].toString().localeCompare(b[key].toString())
+          : b[key].toString().localeCompare(a[key].toString());
       });
       return sorted;
     });
@@ -128,8 +103,8 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="border-b bg-white">
+      {/* Header with yellow background */}
+      <header className="border-b bg-yellow-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link
             href="/"
@@ -137,7 +112,11 @@ export default function SearchPage() {
           >
             #NotInMyCity
           </Link>
-          <Button asChild variant="outline">
+          <Button
+            asChild
+            variant="outline"
+            className="border-yellow-400 hover:bg-yellow-100"
+          >
             <Link href="/admin">Agency Login</Link>
           </Button>
         </div>
@@ -164,6 +143,7 @@ export default function SearchPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Photo</TableHead>
                 <TableHead
                   className="cursor-pointer"
                   onClick={() => handleSort("name")}
@@ -171,6 +151,20 @@ export default function SearchPage() {
                   <div className="flex items-center gap-2">
                     Name
                     {sortConfig.key === "name" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      ))}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("dateOfBirth")}
+                >
+                  <div className="flex items-center gap-2">
+                    Date of Birth
+                    {sortConfig.key === "dateOfBirth" &&
                       (sortConfig.direction === "asc" ? (
                         <ChevronUp className="w-4 h-4" />
                       ) : (
@@ -192,10 +186,48 @@ export default function SearchPage() {
                       ))}
                   </div>
                 </TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Risk Level</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("location")}
+                >
+                  <div className="flex items-center gap-2">
+                    Location
+                    {sortConfig.key === "location" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      ))}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("status")}
+                >
+                  <div className="flex items-center gap-2">
+                    Status
+                    {sortConfig.key === "status" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      ))}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer"
+                  onClick={() => handleSort("riskLevel")}
+                >
+                  <div className="flex items-center gap-2">
+                    Risk Level
+                    {sortConfig.key === "riskLevel" &&
+                      (sortConfig.direction === "asc" ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      ))}
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -203,7 +235,7 @@ export default function SearchPage() {
                 // Loading state
                 [...Array(3)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(6)].map((_, j) => (
+                    {[...Array(7)].map((_, j) => (
                       <TableCell key={j}>
                         <div className="h-4 bg-gray-200 rounded animate-pulse" />
                       </TableCell>
@@ -214,7 +246,7 @@ export default function SearchPage() {
                 // No results
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="text-center py-8 text-gray-500"
                   >
                     No results found for &quot;{searchQuery}&quot;
@@ -223,11 +255,21 @@ export default function SearchPage() {
               ) : (
                 // Results
                 data.map((person) => (
-                  <TableRow key={person.id}>
-                    <TableCell className="font-medium">{person.name}</TableCell>
+                  <TableRow key={person.id} className="group hover:bg-gray-50">
                     <TableCell>
-                      {new Date(person.lastSeen).toLocaleDateString()}
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                        <Image
+                          src={person.image}
+                          alt={person.name}
+                          fill
+                          className="object-cover"
+                          sizes="40px"
+                        />
+                      </div>
                     </TableCell>
+                    <TableCell className="font-medium">{person.name}</TableCell>
+                    <TableCell>{formatDate(person.dateOfBirth)}</TableCell>
+                    <TableCell>{formatDate(person.lastSeen)}</TableCell>
                     <TableCell>{person.location}</TableCell>
                     <TableCell>
                       <Badge className={getStatusBadge(person.status)}>
@@ -240,11 +282,6 @@ export default function SearchPage() {
                         {person.riskLevel.charAt(0).toUpperCase() +
                           person.riskLevel.slice(1)}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
